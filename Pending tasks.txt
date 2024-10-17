@@ -1,0 +1,4 @@
+Pending tasks
+1) JWT authentication
+2) Fully responsive
+3)
