@@ -21,6 +21,8 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu"; // For responsive hamburger icon
 import "../styles/Dashboard.css"; // Import the custom CSS for responsive navbar
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface Task {
   _id: string;
@@ -36,6 +38,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false); // Track if editing
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null); // Track the task being edited
 
   const [newTask, setNewTask] = useState<Partial<Task>>({
     title: "",
@@ -106,7 +110,13 @@ const Dashboard = () => {
           priority: "",
           status: "Pending",
         });
-        fetchTasks(localStorage.getItem("token") || "");
+
+        if (token) {
+          // Check if token is not null
+          fetchTasks(token);
+        } else {
+          setError("Token is null.");
+        }
       } else {
         setError("Failed to add task");
       }
@@ -114,6 +124,77 @@ const Dashboard = () => {
       setError("Failed to add task");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditTask = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `http://localhost:5002/api/tasks/${editingTaskId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(newTask),
+        }
+      );
+
+      if (response.ok) {
+        setSnackbarOpen(true);
+        setModalOpen(false);
+        setNewTask({
+          title: "",
+          dueDate: "",
+          priority: "",
+          status: "Pending",
+        });
+
+        if (token) {
+          // Check if token is not null
+          fetchTasks(token);
+        } else {
+          setError("Token is null.");
+        }
+      } else {
+        setError("Failed to edit task");
+      }
+    } catch (err) {
+      setError("Failed to edit task");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (window.confirm("Are you sure you want to delete this task?")) {
+      try {
+        const response = await fetch(
+          `http://localhost:5002/api/tasks/${taskId}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          if (token) {
+            // Check if token is not null
+            fetchTasks(token);
+          } else {
+            setError("Token is null.");
+          }
+        } else {
+          setError("Failed to delete task");
+        }
+      } catch (err) {
+        setError("Failed to delete task");
+      }
     }
   };
 
@@ -131,6 +212,26 @@ const Dashboard = () => {
     setNewTask((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleEditOpen = (task: Task) => {
+    setNewTask(task);
+    setEditingTaskId(task._id);
+    setIsEditing(true);
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setIsEditing(false);
+    setEditingTaskId(null);
+    setNewTask({
+      title: "",
+      description: "",
+      dueDate: "",
+      priority: "",
+      status: "Pending",
+    });
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       {/* Responsive Navbar */}
@@ -142,7 +243,13 @@ const Dashboard = () => {
         <label className="logo">Task Manager</label>
         <ul>
           <li>
-            <a href="#" onClick={() => setModalOpen(true)}>
+            <a
+              href="#"
+              onClick={() => {
+                setModalOpen(true);
+                setIsEditing(false);
+              }}
+            >
               Add New Task
             </a>
           </li>
@@ -174,24 +281,101 @@ const Dashboard = () => {
                   borderRadius: "12px",
                 }}
               >
-                <Typography variant="h6">{task.title}</Typography>
-                <Typography variant="body2">Due: {task.dueDate}</Typography>
-                <Typography variant="body2">
-                  Priority: {task.priority}
+                {/* Title and Priority */}
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: "bold",
+                      fontFamily: "'Poppins', sans-serif", // Custom font style
+                      fontSize: "1.5rem", // Larger font size
+                      color: "#333", // Darker color for title
+                      letterSpacing: "0.5px", // Slight spacing between letters
+                    }}
+                  >
+                    {task.title}
+                  </Typography>
+                  <Box
+                    component="span"
+                    sx={{
+                      marginLeft: "10px",
+                      padding: "2px 8px",
+                      borderRadius: "12px",
+                      color: "#fff",
+                      fontWeight: "bold",
+                      fontSize: "0.875rem",
+                      backgroundColor:
+                        task.priority === "Low"
+                          ? "green"
+                          : task.priority === "Medium"
+                          ? "orange"
+                          : "red",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {task.priority}
+                  </Box>
+                </Box>
+
+                {/* Description */}
+                <Typography variant="body2" sx={{ marginTop: "8px" }}>
+                  {task.description}
                 </Typography>
-                <Typography variant="body2">Status: {task.status}</Typography>
-                <Typography variant="body2">
-                  Description: {task.description}
-                </Typography>{" "}
-                {/* Displaying Description */}
+
+                {/* Due date and status */}
+                <Box
+                  sx={{
+                    marginTop: "12px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: "#757575" }}>
+                    {new Date(task.dueDate).toLocaleDateString()}{" "}
+                    {/* Format due date */}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: task.status === "Completed" ? "green" : "orange",
+                    }}
+                  >
+                    {task.status}
+                  </Typography>
+                </Box>
+
+                {/* Edit and Delete buttons */}
+                <Box
+                  sx={{
+                    marginTop: 2,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <IconButton
+                    color="primary"
+                    onClick={() => handleEditOpen(task)}
+                    aria-label="edit"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    color="secondary"
+                    onClick={() => handleDeleteTask(task._id)}
+                    aria-label="delete"
+                    sx={{ marginLeft: 1 }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
               </Card>
             </Grid>
           ))}
         </Grid>
       </Box>
 
-      {/* Modal for Adding Task */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+      {/* Modal for Adding or Editing Task */}
+      <Modal open={modalOpen} onClose={handleModalClose}>
         <Box
           sx={{
             padding: "20px",
@@ -202,8 +386,9 @@ const Dashboard = () => {
           }}
         >
           <Typography variant="h5" sx={{ mb: 2 }}>
-            Add New Task
+            {isEditing ? "Edit Task" : "Add New Task"}
           </Typography>
+
           <TextField
             label="Title"
             name="title"
@@ -213,6 +398,7 @@ const Dashboard = () => {
             onChange={handleTextFieldChange}
             sx={{ mb: 2 }}
           />
+
           <TextField
             label="Due Date"
             name="dueDate"
@@ -226,18 +412,37 @@ const Dashboard = () => {
               shrink: true,
             }}
           />
-          <FormControl fullWidth sx={{ mb: 2 }}>
+
+          <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
             <InputLabel>Priority</InputLabel>
             <Select
               name="priority"
               value={newTask.priority}
               onChange={handleSelectChange}
+              label="Priority"
             >
-              <MenuItem value="High">High</MenuItem>
-              <MenuItem value="Medium">Medium</MenuItem>
               <MenuItem value="Low">Low</MenuItem>
+              <MenuItem value="Medium">Medium</MenuItem>
+              <MenuItem value="High">High</MenuItem>
             </Select>
           </FormControl>
+
+          {/* New Status Dropdown */}
+          <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
+            <InputLabel>Status</InputLabel>
+            <Select
+              name="status"
+              value={newTask.status} // Make sure newTask has a 'status' property
+              onChange={handleSelectChange}
+              label="Status"
+            >
+              <MenuItem value="TO DO">TO DO</MenuItem>
+              <MenuItem value="BLOCKED">BLOCKED</MenuItem>
+              <MenuItem value="IN PROGRESS">IN PROGRESS</MenuItem>
+              <MenuItem value="COMPLETED">COMPLETED</MenuItem>
+            </Select>
+          </FormControl>
+
           <TextField
             label="Description"
             name="description"
@@ -249,24 +454,39 @@ const Dashboard = () => {
             onChange={handleTextFieldChange}
             sx={{ mb: 2 }}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleAddTask}
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} /> : "Save Task"}
-          </Button>
-          {error && <Typography color="error">{error}</Typography>}
+
+          <Box>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={isEditing ? handleEditTask : handleAddTask}
+              disabled={loading}
+            >
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : isEditing ? (
+                "Save Changes"
+              ) : (
+                "Add Task"
+              )}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={handleModalClose}
+              sx={{ marginLeft: 1 }}
+            >
+              Cancel
+            </Button>
+          </Box>
         </Box>
       </Modal>
 
-      {/* Snackbar for Success */}
+      {/* Snackbar for feedback */}
       <Snackbar
         open={snackbarOpen}
-        autoHideDuration={6000}
+        autoHideDuration={3000}
         onClose={handleSnackbarClose}
-        message="Task added successfully"
+        message="Task saved successfully!"
       />
     </Box>
   );

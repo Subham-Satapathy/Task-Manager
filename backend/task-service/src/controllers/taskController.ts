@@ -32,15 +32,24 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
 };
 
 export const updateTask = async (req: Request, res: Response): Promise<void> => {
+
   const { id } = req.params;
-  const { status } = req.body;
+
+  console.log(`Updating task - ${id}`);
+  
+  const { title, description, dueDate, priority, status } = req.body;
+  
 
   try {
-    const task = await Task.findByIdAndUpdate(id, { status }, { new: true });
+
+    //Updating in DB
+    const task = await Task.findByIdAndUpdate(id, { title, description, dueDate, priority, status }, { new: true });
+    
     if (!task) {
       res.status(404).json({ error: 'Task not found' });
       return;
     }
+    console.log(`Updated task - ${id}`);
     res.status(200).json(task);
   } catch (error) {
     console.log(error);
