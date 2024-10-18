@@ -166,6 +166,21 @@ const SignUp: React.FC = () => {
                     </Button>
                 </Box>
 
+                {/* New Section for Login Link */}
+                <Typography 
+                    variant="body2" 
+                    sx={{ 
+                        marginTop: '20px', 
+                        color: '#555', 
+                        textAlign: 'center',
+                        cursor: 'pointer'
+                    }}
+                    onClick={() => navigate('/login')} // Navigate to login page on click
+                >
+                    Already have an account? <strong style={{ color: '#4caf50' }}>Login here</strong>
+                </Typography>
+
+
                 {/* Snackbar for success message */}
                 <Snackbar
                     open={openSnackbar}

@@ -49,8 +49,9 @@ const Login: React.FC = () => {
 
       // Handle successful login
       const data = await response.json(); // Assuming your API returns user data
-      console.log("Login successful:", data); // Debugging log
-      
+      // Store the token in local storage
+      localStorage.setItem("token", data.token);
+      console.log("Login successful:"); // Debugging log
 
       // Set the snackbar message
       setSnackbarMessage(`Login successful! Welcome back!`);
@@ -171,6 +172,21 @@ const Login: React.FC = () => {
             Login
           </Button>
         </Box>
+
+        {/* New Section for Login Link */}
+        <Typography
+          variant="body2"
+          sx={{
+            marginTop: "20px",
+            color: "#555",
+            textAlign: "center",
+            cursor: "pointer",
+          }}
+          onClick={() => navigate("/signup")} // Navigate to login page on click
+        >
+          Don't have an account?{" "}
+          <strong style={{ color: "#4caf50" }}>Sign Up here</strong>
+        </Typography>
 
         {/* Snackbar for success message */}
         <Snackbar
