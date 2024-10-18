@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  AppBar,
-  Toolbar,
   Typography,
   Button,
   IconButton,
@@ -18,11 +16,12 @@ import {
   Snackbar,
   CircularProgress,
   SelectChangeEvent,
+  Paper,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu"; // For responsive hamburger icon
-import "../styles/Dashboard.css"; // Import the custom CSS for responsive navbar
+import MenuIcon from "@mui/icons-material/Menu";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import "../styles/Dashboard.css";
 
 interface Task {
   _id: string;
@@ -66,21 +65,137 @@ const Dashboard = () => {
   }, []);
 
   const fetchTasks = async (token: string) => {
-    const response = await fetch("http://localhost:5002/api/tasks", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (response.ok) {
-      const tasksData = await response.json();
-      setTasks(tasksData);
-    } else {
-      console.error("Failed to fetch tasks");
-      setError("Failed to fetch tasks");
+    try {
+      const response = await fetch("http://localhost:5002/api/tasks", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      // Check if the response is OK
+      if (response.ok) {
+        const tasksData = await response.json();
+        setTasks(tasksData);
+      } else if (response.status === 401) {
+        // Token is invalid or expired
+        console.error("Unauthorized: Invalid or expired token");
+        setError("Session expired. Please log in again.");
+        // Optionally, clear the token and redirect to login page
+        localStorage.removeItem('token');
+      } else {
+        console.error("Failed to fetch tasks");
+        setError("Failed to fetch tasks");
+      }
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      setError("An error occurred while fetching tasks");
     }
+  };
+  
+
+  // Task Card Component
+  const TaskCard = ({ task }: { task: Task }) => (
+    <Card
+      sx={{
+        padding: "16px",
+        marginBottom: "16px",
+        boxShadow: 2,
+        borderRadius: "8px",
+        transition: "transform 0.2s",
+        "&:hover": {
+          transform: "translateY(-4px)",
+          boxShadow: 3,
+        },
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: "bold",
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: "1.2rem",
+            color: "#333",
+            letterSpacing: "0.5px",
+            flex: 1,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {task.title}
+        </Typography>
+        <Box
+          component="span"
+          sx={{
+            marginLeft: "10px",
+            padding: "2px 8px",
+            borderRadius: "12px",
+            color: "#fff",
+            fontWeight: "bold",
+            fontSize: "0.75rem",
+            backgroundColor:
+              task.priority === "Low"
+                ? "#4caf50"
+                : task.priority === "Medium"
+                ? "#ff9800"
+                : "#f44336",
+          }}
+        >
+          {task.priority}
+        </Box>
+      </Box>
+
+      <Typography
+        variant="body2"
+        sx={{
+          marginTop: "8px",
+          color: "#666",
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          minHeight: "40px",
+        }}
+      >
+        {task.description}
+      </Typography>
+
+      <Box
+        sx={{
+          marginTop: "12px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="body2" sx={{ color: "#757575" }}>
+          {new Date(task.dueDate).toLocaleDateString()}
+        </Typography>
+        <Box>
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={() => handleEditOpen(task)}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => handleDeleteTask(task._id)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
+    </Card>
+  );
+
+  // Function to get tasks by status
+  const getTasksByStatus = (status: string) => {
+    return tasks.filter((task) => task.status === status);
   };
 
   const handleLogout = () => {
@@ -267,110 +382,132 @@ const Dashboard = () => {
         </ul>
       </nav>
 
-      {/* Main Dashboard Content */}
+      {/* Kanban Board Layout */}
       <Box sx={{ padding: "20px", backgroundColor: "#f4f4f4" }}>
-        {/* Task Grid */}
         <Grid container spacing={2}>
-          {tasks.map((task) => (
-            <Grid item xs={12} md={6} lg={4} key={task._id}>
-              <Card
+          {/* TO DO Column */}
+          <Grid item xs={12} md={6} lg={3}>
+            <Paper
+              sx={{
+                p: 2,
+                backgroundColor: "#f8f8f8",
+                borderRadius: "12px",
+                height: "calc(100vh - 120px)",
+                overflow: "auto",
+              }}
+            >
+              <Typography
+                variant="h6"
                 sx={{
-                  padding: "16px",
-                  margin: "8px 0",
-                  boxShadow: 3,
-                  borderRadius: "12px",
+                  p: 1,
+                  mb: 2,
+                  backgroundColor: "#fff",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  color: "#333",
                 }}
               >
-                {/* Title and Priority */}
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontWeight: "bold",
-                      fontFamily: "'Poppins', sans-serif", // Custom font style
-                      fontSize: "1.5rem", // Larger font size
-                      color: "#333", // Darker color for title
-                      letterSpacing: "0.5px", // Slight spacing between letters
-                    }}
-                  >
-                    {task.title}
-                  </Typography>
-                  <Box
-                    component="span"
-                    sx={{
-                      marginLeft: "10px",
-                      padding: "2px 8px",
-                      borderRadius: "12px",
-                      color: "#fff",
-                      fontWeight: "bold",
-                      fontSize: "0.875rem",
-                      backgroundColor:
-                        task.priority === "Low"
-                          ? "green"
-                          : task.priority === "Medium"
-                          ? "orange"
-                          : "red",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {task.priority}
-                  </Box>
-                </Box>
+                TO DO ({getTasksByStatus("TO DO").length})
+              </Typography>
+              {getTasksByStatus("TO DO").map((task) => (
+                <TaskCard key={task._id} task={task} />
+              ))}
+            </Paper>
+          </Grid>
 
-                {/* Description */}
-                <Typography variant="body2" sx={{ marginTop: "8px" }}>
-                  {task.description}
-                </Typography>
+          {/* BLOCKED Column */}
+          <Grid item xs={12} md={6} lg={3}>
+            <Paper
+              sx={{
+                p: 2,
+                backgroundColor: "#f8f8f8",
+                borderRadius: "12px",
+                height: "calc(100vh - 120px)",
+                overflow: "auto",
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  p: 1,
+                  mb: 2,
+                  backgroundColor: "#fff",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  color: "#333",
+                }}
+              >
+                BLOCKED ({getTasksByStatus("BLOCKED").length})
+              </Typography>
+              {getTasksByStatus("BLOCKED").map((task) => (
+                <TaskCard key={task._id} task={task} />
+              ))}
+            </Paper>
+          </Grid>
 
-                {/* Due date and status */}
-                <Box
-                  sx={{
-                    marginTop: "12px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Typography variant="body2" sx={{ color: "#757575" }}>
-                    {new Date(task.dueDate).toLocaleDateString()}{" "}
-                    {/* Format due date */}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: task.status === "Completed" ? "green" : "orange",
-                    }}
-                  >
-                    {task.status}
-                  </Typography>
-                </Box>
+          {/* IN PROGRESS Column */}
+          <Grid item xs={12} md={6} lg={3}>
+            <Paper
+              sx={{
+                p: 2,
+                backgroundColor: "#f8f8f8",
+                borderRadius: "12px",
+                height: "calc(100vh - 120px)",
+                overflow: "auto",
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  p: 1,
+                  mb: 2,
+                  backgroundColor: "#fff",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  color: "#333",
+                }}
+              >
+                IN PROGRESS ({getTasksByStatus("IN PROGRESS").length})
+              </Typography>
+              {getTasksByStatus("IN PROGRESS").map((task) => (
+                <TaskCard key={task._id} task={task} />
+              ))}
+            </Paper>
+          </Grid>
 
-                {/* Edit and Delete buttons */}
-                <Box
-                  sx={{
-                    marginTop: 2,
-                    display: "flex",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <IconButton
-                    color="primary"
-                    onClick={() => handleEditOpen(task)}
-                    aria-label="edit"
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    color="secondary"
-                    onClick={() => handleDeleteTask(task._id)}
-                    aria-label="delete"
-                    sx={{ marginLeft: 1 }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              </Card>
-            </Grid>
-          ))}
+          {/* COMPLETED Column */}
+          <Grid item xs={12} md={6} lg={3}>
+            <Paper
+              sx={{
+                p: 2,
+                backgroundColor: "#f8f8f8",
+                borderRadius: "12px",
+                height: "calc(100vh - 120px)",
+                overflow: "auto",
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  p: 1,
+                  mb: 2,
+                  backgroundColor: "#fff",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  color: "#333",
+                }}
+              >
+                COMPLETED ({getTasksByStatus("COMPLETED").length})
+              </Typography>
+              {getTasksByStatus("COMPLETED").map((task) => (
+                <TaskCard key={task._id} task={task} />
+              ))}
+            </Paper>
+          </Grid>
         </Grid>
       </Box>
 
