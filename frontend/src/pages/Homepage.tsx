@@ -1,9 +1,21 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { Container, Button, Typography, Paper, Box } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { AccountCircle, VpnKey } from '@mui/icons-material'; // Import icons
+import { AccountCircle, VpnKey } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { isAuthenticated } from '../utils/authUtils';
+
 
 const Homepage: React.FC = () => {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (isAuthenticated()) {
+          navigate('/dashboard'); // Redirect to tasks if token is present
+        }
+      }, [navigate]);
+
+
     return (
         <Container component="main" maxWidth="xs" style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <Paper elevation={6} style={{ padding: '85px', borderRadius: '15px', textAlign: 'center', background: 'white' }}>

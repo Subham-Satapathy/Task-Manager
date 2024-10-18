@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Button,
@@ -11,6 +11,8 @@ import {
 import { VpnKey } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for redirection
 import { SnackbarCloseReason } from "@mui/material"; // Import SnackbarCloseReason
+import { isAuthenticated } from '../utils/authUtils';
+
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState(""); // State for email
@@ -19,6 +21,12 @@ const Login: React.FC = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false); // State for Snackbar
   const [snackbarMessage, setSnackbarMessage] = useState(""); // State for Snackbar message
   const navigate = useNavigate(); // Hook for navigation
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard'); // Redirect to tasks if token is present
+    }
+  }, [navigate]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

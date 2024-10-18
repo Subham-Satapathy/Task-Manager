@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Button, Typography, Paper, Box, TextField, Grid, Snackbar } from '@mui/material';
 import { AccountCircle } from '@mui/icons-material';
 import { SnackbarCloseReason } from '@mui/material'; // Import SnackbarCloseReason
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { isAuthenticated } from '../utils/authUtils';
+
 
 const SignUp: React.FC = () => {
     const [name, setname] = useState('');
@@ -13,6 +15,12 @@ const SignUp: React.FC = () => {
     const [snackbarMessage, setSnackbarMessage] = useState(''); // State for Snackbar message
 
     const navigate = useNavigate(); // Initialize navigate
+
+    useEffect(() => {
+        if (isAuthenticated()) {
+          navigate('/dashboard'); // Redirect to tasks if token is present
+        }
+      }, [navigate]);
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
