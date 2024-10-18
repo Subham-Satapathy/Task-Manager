@@ -73,7 +73,7 @@ const Dashboard = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-
+  
       // Check if the response is OK
       if (response.ok) {
         const tasksData = await response.json();
@@ -83,7 +83,7 @@ const Dashboard = () => {
         console.error("Unauthorized: Invalid or expired token");
         setError("Session expired. Please log in again.");
         // Optionally, clear the token and redirect to login page
-        localStorage.removeItem("token");
+        localStorage.removeItem('token');
       } else {
         console.error("Failed to fetch tasks");
         setError("Failed to fetch tasks");
@@ -93,6 +93,7 @@ const Dashboard = () => {
       setError("An error occurred while fetching tasks");
     }
   };
+  
 
   // Task Card Component
   const TaskCard = ({ task }: { task: Task }) => (
@@ -170,35 +171,33 @@ const Dashboard = () => {
         }}
       >
         <Typography variant="body2" sx={{ color: "#757575" }}>
-          {new Date(task.dueDate).toLocaleDateString()}
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            color: "#757575",
-            marginLeft: "8px", // Add some spacing
-          }}
-        >
-          {(() => {
-            const dueDate = new Date(task.dueDate);
-            const currentDate = new Date();
-            const timeDifference = dueDate.getTime() - currentDate.getTime(); // in milliseconds
-            const daysRemaining = Math.ceil(
-              timeDifference / (1000 * 60 * 60 * 24)
-            ); // convert to days
+  {new Date(task.dueDate).toLocaleDateString()}
+</Typography>
 
-            // Return the appropriate message based on days remaining
-            if (daysRemaining < 0) {
-              return "Overdue"; // If due date has passed
-            } else if (daysRemaining === 0) {
-              return "Due Today"; // If due date is today
-            } else {
-              return `Due in ${daysRemaining} day${
-                daysRemaining !== 1 ? "s" : ""
-              }`; // Display remaining days
-            }
-          })()}
-        </Typography>
+<Typography
+  variant="body2"
+  sx={{
+    color: "#757575",
+    marginLeft: "8px", // Add some spacing
+  }}
+>
+  {(() => {
+    const dueDate = new Date(task.dueDate);
+    const currentDate = new Date();
+    const timeDifference = dueDate.getTime() - currentDate.getTime(); // in milliseconds
+    const daysRemaining = Math.ceil(timeDifference / (1000 * 60 * 60 * 24)); // convert to days
+
+    // Return the appropriate message based on days remaining
+    if (daysRemaining < 0) {
+      return "Overdue"; // If due date has passed
+    } else if (daysRemaining === 0) {
+      return "Due Today"; // If due date is today
+    } else {
+      return `Due in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`; // Display remaining days
+    }
+  })()}
+</Typography>
+
         <Box>
           <IconButton
             size="small"
@@ -411,37 +410,6 @@ const Dashboard = () => {
       {/* Kanban Board Layout */}
       <Box sx={{ padding: "20px", backgroundColor: "#f4f4f4" }}>
         <Grid container spacing={2}>
-          {/* TO DO Column */}
-          <Grid item xs={12} md={6} lg={3}>
-            <Paper
-              sx={{
-                p: 2,
-                backgroundColor: "#f8f8f8",
-                borderRadius: "12px",
-                height: "calc(100vh - 120px)",
-                overflow: "auto",
-              }}
-            >
-              <Typography
-                variant="h6"
-                sx={{
-                  p: 1,
-                  mb: 2,
-                  backgroundColor: "#fff",
-                  borderRadius: "8px",
-                  fontWeight: "bold",
-                  textAlign: "center",
-                  color: "#333",
-                }}
-              >
-                TO DO ({getTasksByStatus("TO DO").length})
-              </Typography>
-              {getTasksByStatus("TO DO").map((task) => (
-                <TaskCard key={task._id} task={task} />
-              ))}
-            </Paper>
-          </Grid>
-
           {/* BLOCKED Column */}
           <Grid item xs={12} md={6} lg={3}>
             <Paper
@@ -472,6 +440,7 @@ const Dashboard = () => {
               ))}
             </Paper>
           </Grid>
+
 
           {/* IN PROGRESS Column */}
           <Grid item xs={12} md={6} lg={3}>
