@@ -18,11 +18,11 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const createTask = async (req: Request, res: Response): Promise<void> => {
-  const { title, dueDate, priority } = req.body;
+  const { title, description, dueDate, priority, status } = req.body;
 
   try {
     const userId = (req as Request & { userId: string }).userId;
-    const newTask = new Task({ title, dueDate, priority, userId: userId}); // Use userId here as well
+    const newTask = new Task({ title, description, dueDate, priority, userId, status}); // Use userId here as well
     await newTask.save();
     res.status(201).json(newTask);
   } catch (error) {

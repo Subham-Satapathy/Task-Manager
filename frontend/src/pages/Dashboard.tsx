@@ -1,16 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   AppBar,
   Toolbar,
   Typography,
   Button,
   IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
   Box,
   Grid,
   Card,
@@ -23,57 +18,55 @@ import {
   Snackbar,
   CircularProgress,
   SelectChangeEvent,
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import AccountCircle from '@mui/icons-material/AccountCircle';
+} from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu"; // For responsive hamburger icon
+import "../styles/Dashboard.css"; // Import the custom CSS for responsive navbar
 
 interface Task {
-  _id: string; // Changed to use MongoDB style ID
+  _id: string;
   title: string;
+  description: string;
   dueDate: string;
   priority: string;
   status: string;
 }
 
 const Dashboard = () => {
-  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
 
   const [newTask, setNewTask] = useState<Partial<Task>>({
-    title: '',
-    dueDate: '',
-    priority: '',
-    status: 'Pending',
+    title: "",
+    description: "",
+    dueDate: "",
+    priority: "",
+    status: "Pending",
   });
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const navigate = useNavigate();
 
-  const token = localStorage.getItem('token');
-  
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
-    console.log('Found token in localStorage');
-    
     if (token) {
       setIsLoggedIn(true);
-      fetchTasks(token); // Call function to fetch tasks if logged in
+      fetchTasks(token);
     } else {
       setIsLoggedIn(false);
-      navigate('/'); 
-      // Handle redirect or show message for unauthenticated users
+      navigate("/");
     }
   }, []);
 
   const fetchTasks = async (token: string) => {
-    const response = await fetch('http://localhost:5002/api/tasks', {
-      method: 'GET',
+    const response = await fetch("http://localhost:5002/api/tasks", {
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // Include the token
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -81,34 +74,25 @@ const Dashboard = () => {
       const tasksData = await response.json();
       setTasks(tasksData);
     } else {
-      console.error('Failed to fetch tasks');
-      setError('Failed to fetch tasks');
+      console.error("Failed to fetch tasks");
+      setError("Failed to fetch tasks");
     }
   };
 
-  const toggleDrawer = (open: boolean) => () => {
-    setDrawerOpen(open);
-  };
-
-  const toggleModal = (open: boolean) => () => {
-    setModalOpen(open);
-  };
-
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setIsLoggedIn(false);
-    navigate('/'); // Redirects to the homepage
-    // Optionally redirect to login page or perform additional actions
+    navigate("/");
   };
 
   const handleAddTask = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5002/api/tasks', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5002/api/tasks", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Include the token
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(newTask),
       });
@@ -117,17 +101,17 @@ const Dashboard = () => {
         setSnackbarOpen(true);
         setModalOpen(false);
         setNewTask({
-          title: '',
-          dueDate: '',
-          priority: '',
-          status: 'Pending',
-        }); // Reset newTask to initial state
-        fetchTasks(localStorage.getItem('token') || ''); // Re-fetch tasks
+          title: "",
+          dueDate: "",
+          priority: "",
+          status: "Pending",
+        });
+        fetchTasks(localStorage.getItem("token") || "");
       } else {
-        setError('Failed to add task');
+        setError("Failed to add task");
       }
     } catch (err) {
-      setError('Failed to add task');
+      setError("Failed to add task");
     } finally {
       setLoading(false);
     }
@@ -149,58 +133,57 @@ const Dashboard = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" sx={{ backgroundColor: '#424242' }}>
-        <Toolbar>
-          <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)}>
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Task Manager
-          </Typography>
-          <IconButton color="inherit">
-            <AccountCircle />
-          </IconButton>
-          <Button color="inherit" onClick={handleLogout}>Logout</Button>
-        </Toolbar>
-      </AppBar>
+      {/* Responsive Navbar */}
+      <nav>
+        <input type="checkbox" id="check" />
+        <label htmlFor="check" className="checkbtn">
+          <MenuIcon />
+        </label>
+        <label className="logo">Task Manager</label>
+        <ul>
+          <li>
+            <a href="#" onClick={() => setModalOpen(true)}>
+              Add New Task
+            </a>
+          </li>
+          <li>
+            <a href="#">Profile</a>
+          </li>
+          <li>
+            <a href="#">Settings</a>
+          </li>
+          <li>
+            <a href="#" onClick={handleLogout}>
+              Logout
+            </a>
+          </li>
+        </ul>
+      </nav>
 
-      <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
-        <Box
-          sx={{ width: 250, backgroundColor: '#333', color: '#fff' }}
-          role="presentation"
-          onClick={toggleDrawer(false)}
-          onKeyDown={toggleDrawer(false)}
-        >
-          <List>
-            {['All Tasks', 'Completed Tasks', 'Pending Tasks', 'Add New Task', 'Profile', 'Settings'].map((text, index) => (
-              <ListItem key={text}>
-                <ListItemText primary={text} sx={{ color: '#fff' }} />
-              </ListItem>
-            ))}
-          </List>
-          <Divider sx={{ backgroundColor: '#555' }} />
-        </Box>
-      </Drawer>
-
-      {/* Main Content Area */}
-      <Box sx={{ padding: '20px', backgroundColor: '#f4f4f4' }}>
-        <Typography variant="h4" gutterBottom>
-          Task Overview
-        </Typography>
-
-        {/* Add Task Button */}
-        <Button variant="contained" color="primary" onClick={toggleModal(true)} sx={{ mb: 2 }}>
-          Add Task
-        </Button>
-
+      {/* Main Dashboard Content */}
+      <Box sx={{ padding: "20px", backgroundColor: "#f4f4f4" }}>
+        {/* Task Grid */}
         <Grid container spacing={2}>
           {tasks.map((task) => (
             <Grid item xs={12} md={6} lg={4} key={task._id}>
-              <Card sx={{ padding: '16px', margin: '8px 0', boxShadow: 3, borderRadius: '12px' }}>
+              <Card
+                sx={{
+                  padding: "16px",
+                  margin: "8px 0",
+                  boxShadow: 3,
+                  borderRadius: "12px",
+                }}
+              >
                 <Typography variant="h6">{task.title}</Typography>
                 <Typography variant="body2">Due: {task.dueDate}</Typography>
-                <Typography variant="body2">Priority: {task.priority}</Typography>
+                <Typography variant="body2">
+                  Priority: {task.priority}
+                </Typography>
                 <Typography variant="body2">Status: {task.status}</Typography>
+                <Typography variant="body2">
+                  Description: {task.description}
+                </Typography>{" "}
+                {/* Displaying Description */}
               </Card>
             </Grid>
           ))}
@@ -208,8 +191,16 @@ const Dashboard = () => {
       </Box>
 
       {/* Modal for Adding Task */}
-      <Modal open={modalOpen} onClose={toggleModal(false)}>
-        <Box sx={{ padding: '20px', backgroundColor: '#fff', margin: '10% auto', width: '400px', boxShadow: 24 }}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+        <Box
+          sx={{
+            padding: "20px",
+            backgroundColor: "#fff",
+            margin: "10% auto",
+            width: "400px",
+            boxShadow: 24,
+          }}
+        >
           <Typography variant="h5" sx={{ mb: 2 }}>
             Add New Task
           </Typography>
@@ -247,13 +238,24 @@ const Dashboard = () => {
               <MenuItem value="Low">Low</MenuItem>
             </Select>
           </FormControl>
+          <TextField
+            label="Description"
+            name="description"
+            fullWidth
+            variant="outlined"
+            multiline
+            rows={4}
+            value={newTask.description}
+            onChange={handleTextFieldChange}
+            sx={{ mb: 2 }}
+          />
           <Button
             variant="contained"
             color="primary"
             onClick={handleAddTask}
-            disabled={loading}  // Disable button when loading
+            disabled={loading}
           >
-            {loading ? <CircularProgress size={24} /> : 'Save Task'}
+            {loading ? <CircularProgress size={24} /> : "Save Task"}
           </Button>
           {error && <Typography color="error">{error}</Typography>}
         </Box>
