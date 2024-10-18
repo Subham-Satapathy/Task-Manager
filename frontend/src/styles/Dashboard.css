@@ -50,6 +50,7 @@ a.active,
 a:hover {
   background: #bdd5f0;
   transition: .5s;
+  color: black;
 }
 
 .checkbtn {
